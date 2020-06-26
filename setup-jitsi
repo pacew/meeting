@@ -99,7 +99,7 @@ def setup_certs():
 
 def add_extensions():
     pdir = "/usr/share/jitsi-meet/prosody-plugins"
-    name = "mod_pace.lua"
+    name = "mod_hmac_rooms.lua"
     dest = f"{pdir}/{name}"
     if not os.path.exists(dest):
         cmd = f"sudo ln -s `pwd`/{name} {dest}"
