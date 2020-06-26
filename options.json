@@ -1,0 +1,8 @@
+{
+    "site_type": "php",
+    "meeting.pacew.org": {
+	"conf-production": {
+	    "external_name": "meeting.pacew.org"
+	}
+    }
+}
