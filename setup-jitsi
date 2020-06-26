@@ -1,0 +1,160 @@
+#! /usr/bin/env python3
+
+import sys
+import os
+import subprocess
+import shlex
+import re
+
+jhost = "jitsi.pacew.org"
+
+yes_flag = False
+
+def run(str):
+    print(str)
+    if yes_flag:
+        ret = subprocess.run(str, 
+                             shell=True, 
+                             stdin = subprocess.DEVNULL,
+                             encoding = "utf8")
+        if ret.returncode != 0:
+            print("exit code", ret.returncode)
+            sys.exit(1)
+
+keyring_basename = "jitsi-keyring.gpg"
+keyring_dir = "/usr/share/keyrings"
+keyring = os.path.join (keyring_dir, keyring_basename)
+
+jitsi_stable_list = "/etc/apt/sources.list.d/jitsi-stable.list"
+
+def setup_keyring():
+    if not os.path.isfile(keyring):
+        run(f"sudo cp {keyring_basename} {keyring}")
+
+def setup_apt_sources():
+    if not os.path.isfile(jitsi_stable_list):
+        text = f"deb [signed-by={keyring}] https://download.jitsi.org stable/"
+        cmd = ("echo {} | sudo tee {} > /dev/null"
+               .format(shlex.quote(text), jitsi_stable_list))
+        run(cmd)
+        run("sudo apt update")
+
+def kill_file(name):
+    if os.path.isfile(name) or os.path.islink(name):
+        run(f"sudo rm -f {name}")
+
+def replace(str, a, b):
+    return re.sub(a, b, str)
+
+
+wildcard_key = "/etc/apache2/wildcard.pacew.org.key"
+wildcard_crt = "/etc/apache2/wildcard.pacew.org.crt"
+
+def fix_prosody_cfg():
+
+    file = f"/etc/prosody/conf.avail/{jhost}.cfg.lua"
+    with open(file) as inf:
+        cfg = inf.read()
+
+    orig_cfg = cfg
+
+    cfg = re.sub(r"^(\s*)key\s*=.*$", 
+                 f'\\1key = "{wildcard_key}";', 
+                 cfg, 
+                 flags=re.MULTILINE)
+
+    cfg = re.sub(r"^(\s*)certificate\s*=.*$", 
+                 f'\\1certificate = "{wildcard_crt}";', 
+                 cfg, 
+                 flags=re.MULTILINE)
+
+    if not re.search ('"pace"', cfg):
+        cfg = re.sub (r'^(.*)("speakerstats".*)$',
+                      '\\1\\2\n\\1"pace";',
+                      cfg,
+                      flags=re.MULTILINE)
+
+    with open("TMP.prosody.cfg.lua", "w") as outf:
+        outf.write(cfg)
+
+    if cfg != orig_cfg:
+        run(f"sudo cp TMP.prosody.cfg.lua {file}")
+
+def fix_apache_cfg():
+    file = f"/etc/apache2/sites-available/{jhost}.conf"
+    with open(file) as inf:
+        cfg = inf.read()
+
+    orig_cfg = cfg
+
+    cfg = re.sub(r"^(\s*SSLCertificateKeyFile\s*).*$",
+                 f'\\1{wildcard_key}',
+                 cfg, 
+                 flags=re.MULTILINE)
+
+    cfg = re.sub(r"^(\s*SSLCertificateFile\s*).*$",
+                 f'\\1{wildcard_crt}',
+                 cfg, 
+                 flags=re.MULTILINE)
+
+    with open("TMP.jconf", "w") as outf:
+        outf.write(cfg)
+
+    if cfg != orig_cfg:
+        run(f"sudo cp TMP.jconf {file}")
+
+def setup_certs():
+#    fix_prosody_cfg()
+    fix_apache_cfg()
+
+def add_extensions():
+    pdir = "/usr/share/jitsi-meet/prosody-plugins"
+    name = "mod_pace.lua"
+    dest = f"{pdir}/{name}"
+    if not os.path.exists(dest):
+        cmd = f"sudo ln -s `pwd`/{name} {dest}"
+        run(cmd)
+
+def fix_perms():
+    stop = False
+    if not os.access("/etc/prosody/certs", os.R_OK):
+        run("sudo chmod a+rx /etc/prosody/certs")
+        stop = True
+        
+    if not os.access("/var/lib/prosody", os.R_OK):
+        run("sudo chmod a+rx /var/lib/prosody")
+        stop = True
+        
+    if not os.access("/etc/prosody/conf.avail", os.X_OK):
+        run("sudo chmod a+rx /etc/prosody/conf.*")
+        stop = True
+
+    if stop:
+        sys.exit(1)
+
+
+def main():
+    global yes_flag
+    
+    if not os.path.isfile("/etc/apache2/wildcard.pacew.org.crt"):
+        print("need to push the wildcard first")
+        sys.exit(1)
+
+    if len(sys.argv) > 1 and sys.argv[1] == "-y":
+        yes_flag = True
+
+    setup_keyring()
+    setup_apt_sources()
+
+    if not os.path.isdir("/etc/jitsi"):
+        print("now run, taking defaults and generating certs")
+        print("you might want the name jitsi.pacew.org")
+        print("sudo apt install jitsi-meet")
+        sys.exit(0)
+
+    fix_perms()
+    setup_certs()
+#    add_extensions()
+
+if __name__ == "__main__":
+    main()

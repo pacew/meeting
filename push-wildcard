@@ -1,0 +1,17 @@
+#! /bin/sh
+
+if [ $# != 1 ]
+then
+    echo "usage: push-wildcard host"
+    exit 1
+fi
+
+host=$1
+
+set -x
+files='wildcard.pacew.org.crt wildcard.pacew.org.key'
+sudo tar -cf TMP.w.tar -C /etc/apache2 $files
+scp TMP.w.tar ${host}:
+ssh $host sudo tar -xf TMP.w.tar -C /etc/apache2
+ssh $host sudo chmod a+r '/etc/apache2/wildcard*'
+ssh $host rm -f TMP.w.tar
