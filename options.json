@@ -1,6 +1,6 @@
 {
   "site_type": "php",
-  "meeting.pacew.org": {
+  "a3.pacew.com": {
     "meeting-production": {
       "external_name": "meeting.pacew.org"
     }
