@@ -104,7 +104,7 @@ def add_extensions():
     if not os.path.exists(dest):
         cmd = f"sudo ln -s `pwd`/{name} {dest}"
         run(cmd)
-    fix_prosody_cfg()
+#    fix_prosody_cfg()
 
 
 def fix_perms():

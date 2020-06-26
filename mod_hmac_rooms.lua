@@ -2,6 +2,8 @@ local st = require "util.stanza";
 local jid = require "util.jid";
 local hashes = require "util.hashes";
 
+local hmac_rooms_key = module:get_option("hmac_rooms_key", false);
+
 local function dbg(str)
       module:log("error", "** " .. str)
 end
@@ -21,13 +23,18 @@ local function tohex(buf)
 end
 
 
-local function valid_room(secret, room_name)
+local function valid_room(room_name)
+   if hmac_rooms_key == false then
+      dbg("hmac_rooms_key not set - no rooms allowed");
+      return false
+   end
+
    msg = string.lower(string.sub(room_name, 1, -9))
    sig_hex = string.sub(room_name, -8);
 
    dbg(string.format("msg %s  sig %s", msg, sig_hex));
 
-   computed = hashes.hmac_sha1(secret, msg);
+   computed = hashes.hmac_sha1(hmac_rooms_key, msg);
    computed = tohex(string.sub(computed, 1, 4))
 
    dbg(string.format("computed %s", computed));
@@ -59,7 +66,7 @@ module:hook("presence/full", function(event)
 
         dbg(string.format("error", "** room %s", room_name));
 
-	if valid_room('xyzzy', room_name) then
+	if valid_room(room_name) then
 	   dbg(string.format("error", "** good room %s", room_name));
 	   return
 	end
@@ -77,8 +84,8 @@ end, 10);
 
 dbg("hello");
 
-val = valid_room("xyzzy", "Hello20200608x10x455425f7")
+val = valid_room("Hello20200626x10x30b20759")
 dbg(string.format("valid? %s", val));
 
-val = valid_room("xyzzy", "Hello20200526x10x90f103d6")
+val = valid_room("Hello20200526x10x90f103d6")
 dbg(string.format("valid? %s", val));
