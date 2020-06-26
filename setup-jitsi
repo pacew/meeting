@@ -155,7 +155,7 @@ def main():
 
     fix_perms()
     setup_certs()
-#    add_extensions()
+    add_extensions()
 
 if __name__ == "__main__":
     main()
