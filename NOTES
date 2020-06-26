@@ -4,3 +4,7 @@ git clone https://github.com/pacew/meeting.git
 
 ./setup-jitsi -y
 
+
+
+chrome://net-internals/#hsts
+Query HSTS/PKP domain

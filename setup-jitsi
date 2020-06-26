@@ -102,6 +102,7 @@ def fix_apache_cfg():
 
     if cfg != orig_cfg:
         run(f"sudo cp TMP.jconf {file}")
+        run("sudo /etc/init.d/apache2 restart")
 
 def setup_certs():
 #    fix_prosody_cfg()
