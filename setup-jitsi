@@ -57,9 +57,9 @@ def fix_prosody_cfg():
 
     orig_cfg = cfg
 
-    if not re.search ('"pace"', cfg):
+    if not re.search ('"mod_hmac_rooms"', cfg):
         cfg = re.sub (r'^(.*)("speakerstats".*)$',
-                      '\\1\\2\n\\1"pace";',
+                      '\\1\\2\n\\1"mod_hmac_rooms";',
                       cfg,
                       flags=re.MULTILINE)
 

@@ -1,18 +1,5 @@
 local st = require "util.stanza";
 local jid = require "util.jid";
-local nodeprep = require "util.encodings".stringprep.nodeprep;
-
--- local get_room_from_jid = module:require "util".get_room_from_jid;
-
-local all_rooms = module:shared "muc/all-rooms";
-local live_rooms = module:shared "muc/live_rooms";
-
-local rooms = module:shared "muc/rooms";
-if not rooms then
-        module:log("error", "This module only works on MUC components!");
-        return;
-end
-
 local hashes = require "util.hashes";
 
 local function dbg(str)
@@ -60,42 +47,6 @@ local function valid_room(secret, room_name)
    return true
 end
 
-
-function indent(level)
-   local s = "";
-   local i;
-   for i = 1,level do
-      s = s .. '  ';
-   end
-   return s;
-end
-
-tbl_seen = {}
-
-function dump(o, level)
-   if level > 3 then
-      return indent(level) .. "...\n"
-   end
-
-   if type(o) == 'table' then
-      if tbl_seen[o] then
-	 return indent(level) .. "LOOP\n"
-      end
-      tbl_seen[o] = true
-      s = ""
-      for k,v in pairs(o) do
-	 idx = k
-         if type(k) ~= 'number' then idx = '"'..k..'"' end
-	 s = s .. indent(level) .. '[' .. idx .. ']\n'
-	 s = s .. dump(v, level+1)
-      end
-      return s
-   else
-      s = indent(level) .. tostring(o) .. "\n"
-      return s
-   end
-end
-
 module:hook("presence/full", function(event)
         local stanza = event.stanza;
 
@@ -103,18 +54,17 @@ module:hook("presence/full", function(event)
                 return;
         end
 
-	-- Get the room
-	local rname = jid.split(stanza.attr.from);
-        if not rname then return; end
+	local room_name = jid.split(stanza.attr.from);
+        if not room_name then return; end
 
-        dbg(string.format("error", "** room %s", rname));
+        dbg(string.format("error", "** room %s", room_name));
 
-	if valid_room('xyzzy', rname) then
-	   dbg(string.format("error", "** good room %s", rname));
+	if valid_room('xyzzy', room_name) then
+	   dbg(string.format("error", "** good room %s", room_name));
 	   return
 	end
 	   
-	dbg(string.format("error", "** bad room %s", rname));
+	dbg(string.format("error", "** bad room %s", room_name));
 
 	event.allowed = false;
 	event.stanza.attr.type = 'error';
