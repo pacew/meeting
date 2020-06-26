@@ -1,0 +1,91 @@
+#! /usr/bin/env python3
+
+import hmac
+import base64
+import secrets
+import re
+import datetime
+import sys
+
+
+secret = "xyzzy"
+
+def mkmeeting(secret, basename_arg, duration, expired = False):
+    # delete all but alnum
+    basename = re.sub(r'[^a-zA-Z0-9]', '', basename_arg)
+
+    if duration > 100:
+        duration = 99
+
+    today = datetime.date.today()
+    if expired:
+        today -= datetime.timedelta(13)
+    yyyy = today.year
+    mm = today.month
+    dd = today.day
+
+    name = f"{basename}{yyyy:04d}{mm:02d}{dd:02d}x{duration:02d}x"
+
+    msg = bytes(name.lower(), 'utf-8')
+    print("sign", msg)
+    h = hmac.new(bytes(secret, 'utf-8'), msg, 'sha1').digest()
+    sig_hex = h[:4].hex()
+
+    room_name = name + sig_hex
+    return room_name
+
+def ckmeeting(secret, room_name):
+    parts = re.search(r'(.*x.*x)(........)$', room_name)
+    if parts is None:
+        return False
+
+    msg = parts.group(1).lower()
+    sig_hex = parts.group(2)
+    
+    received = bytearray.fromhex(sig_hex)
+    print(received)
+
+    print("check", bytes(msg, 'utf-8'))
+    computed = hmac.new(bytes(secret, 'utf-8'), 
+                        bytes(msg, 'utf-8'), 
+                        'sha1').digest()
+    computed = computed[:4]
+    print(computed)
+    
+    if not hmac.compare_digest (received, computed):
+        return False
+
+    parts = re.search(r'.*(....)(..)(..)x(..)x$', msg)
+
+    yyyy = int(parts.group(1))
+    mm = int(parts.group(2))
+    dd = int(parts.group(3))
+    duration = int(parts.group(4))
+    print(yyyy, mm, dd, duration)
+
+    d = datetime.date(yyyy, mm, dd)
+    limit = datetime.timedelta(int(duration))
+    print(d, limit)
+    
+    delta = datetime.date.today() - d
+    if delta > limit:
+        print("expired")
+        return False
+
+    return True
+    
+m = mkmeeting(secret, "Hello", 10)
+print(m)
+url = f"https://jitsi.pacew.org/{m}"
+print(url)
+print(ckmeeting(secret, m))
+
+print("")
+
+m = mkmeeting(secret, "Hello", 10, expired=True)
+print(m)
+url = f"https://jitsi.pacew.org/{m}"
+print(url)
+print(ckmeeting(secret, m))
+
+
