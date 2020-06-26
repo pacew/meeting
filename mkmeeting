@@ -7,6 +7,13 @@ import re
 import datetime
 import sys
 
+if False:
+    msg = bytes("hello20200625x10x", 'utf-8')
+    h = hmac.new(bytes("xyzzy", 'utf-8'), msg, 'sha1').digest()
+    print(h[:4].hex())
+    sys.exit(0)
+
+
 
 secret = "xyzzy"
 

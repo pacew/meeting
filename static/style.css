@@ -126,3 +126,12 @@ p {
 
 
 
+.meeting_link {
+    padding: 2em;
+    font-size: 120%;
+}
+
+.meeting_box {
+    padding: 2em;
+    font-size: 120%;
+}
