@@ -51,22 +51,11 @@ wildcard_key = "/etc/apache2/wildcard.pacew.org.key"
 wildcard_crt = "/etc/apache2/wildcard.pacew.org.crt"
 
 def fix_prosody_cfg():
-
     file = f"/etc/prosody/conf.avail/{jhost}.cfg.lua"
     with open(file) as inf:
         cfg = inf.read()
 
     orig_cfg = cfg
-
-    cfg = re.sub(r"^(\s*)key\s*=.*$", 
-                 f'\\1key = "{wildcard_key}";', 
-                 cfg, 
-                 flags=re.MULTILINE)
-
-    cfg = re.sub(r"^(\s*)certificate\s*=.*$", 
-                 f'\\1certificate = "{wildcard_crt}";', 
-                 cfg, 
-                 flags=re.MULTILINE)
 
     if not re.search ('"pace"', cfg):
         cfg = re.sub (r'^(.*)("speakerstats".*)$',
@@ -105,7 +94,6 @@ def fix_apache_cfg():
         run("sudo /etc/init.d/apache2 restart")
 
 def setup_certs():
-#    fix_prosody_cfg()
     fix_apache_cfg()
 
 def add_extensions():
@@ -115,6 +103,8 @@ def add_extensions():
     if not os.path.exists(dest):
         cmd = f"sudo ln -s `pwd`/{name} {dest}"
         run(cmd)
+    fix_prosody_cfg()
+
 
 def fix_perms():
     stop = False
