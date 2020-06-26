@@ -4,10 +4,6 @@ local hashes = require "util.hashes";
 
 local hmac_rooms_key = module:get_option("hmac_rooms_key", false);
 
-local function dbg(str)
-      module:log("error", "** " .. str)
-end
-
 local function fromhex(str)
     return (str:gsub('..', function (cc)
         return string.char(tonumber(cc, 16))
@@ -25,21 +21,18 @@ end
 
 local function valid_room(room_name)
    if hmac_rooms_key == false then
-      dbg("hmac_rooms_key not set - no rooms allowed");
+      module:log("error", "hmac_rooms_key not set - no rooms allowed");
       return false
    end
 
    msg = string.lower(string.sub(room_name, 1, -9))
    sig_hex = string.sub(room_name, -8);
 
-   dbg(string.format("msg %s  sig %s", msg, sig_hex));
-
    computed = hashes.hmac_sha1(hmac_rooms_key, msg);
    computed = tohex(string.sub(computed, 1, 4))
 
-   dbg(string.format("computed %s", computed));
-
    if computed ~= sig_hex then
+      module:log("info", "hmac room rejected " .. room_name)
       return false
    end
 
@@ -47,7 +40,7 @@ local function valid_room(room_name)
    start = os.time{year=yyyy, month=mm, day=dd}
    delta = os.time() - start
    if delta > duration * 86400 then
-      dbg("expired")
+      module:log("info", "hmac room expired " .. room_name)
       return false
    end
 
@@ -64,15 +57,10 @@ module:hook("presence/full", function(event)
 	local room_name = jid.split(stanza.attr.from);
         if not room_name then return; end
 
-        dbg(string.format("error", "** room %s", room_name));
-
 	if valid_room(room_name) then
-	   dbg(string.format("error", "** good room %s", room_name));
 	   return
 	end
 	   
-	dbg(string.format("error", "** bad room %s", room_name));
-
 	event.allowed = false;
 	event.stanza.attr.type = 'error';
 	return event.origin.send(
@@ -82,10 +70,3 @@ module:hook("presence/full", function(event)
 			  "invalid room name"));
 end, 10);
 
-dbg("hello");
-
-val = valid_room("Hello20200626x10x30b20759")
-dbg(string.format("valid? %s", val));
-
-val = valid_room("Hello20200526x10x90f103d6")
-dbg(string.format("valid? %s", val));

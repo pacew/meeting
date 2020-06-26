@@ -52,16 +52,24 @@ wildcard_crt = "/etc/apache2/wildcard.pacew.org.crt"
 
 def fix_prosody_cfg():
     file = f"/etc/prosody/conf.avail/{jhost}.cfg.lua"
+    file = "pcfg"
     with open(file) as inf:
         cfg = inf.read()
 
     orig_cfg = cfg
 
-    if not re.search ('"mod_hmac_rooms"', cfg):
-        cfg = re.sub (r'^(.*)("speakerstats".*)$',
-                      '\\1\\2\n\\1"mod_hmac_rooms";',
-                      cfg,
-                      flags=re.MULTILINE)
+    if not re.search('"mod_hmac_rooms"', cfg):
+        cfg = re.sub(r'^(.*)("speakerstats".*)$',
+                     '\\1\\2\n\\1"mod_hmac_rooms";',
+                     cfg,
+                     flags=re.MULTILINE)
+
+    if not re.search('hmac_rooms_key', cfg):
+        key = input("please enter hmac_rooms_key: ")
+        cfg = re.sub(r'^(.*)(c2s_require_encryption.*)$',
+                     f'\\1\\2\n\\1hmac_rooms_key = "{key}"',
+                     cfg,
+                     flags=re.MULTILINE)
 
     with open("TMP.prosody.cfg.lua", "w") as outf:
         outf.write(cfg)
@@ -69,6 +77,9 @@ def fix_prosody_cfg():
     if cfg != orig_cfg:
         run(f"sudo cp TMP.prosody.cfg.lua {file}")
         run(f"./restart-jitsi")
+
+fix_prosody_cfg()
+sys.exit(0)
 
 def fix_apache_cfg():
     file = f"/etc/apache2/sites-available/{jhost}.conf"
