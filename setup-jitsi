@@ -52,7 +52,6 @@ wildcard_crt = "/etc/apache2/wildcard.pacew.org.crt"
 
 def fix_prosody_cfg():
     file = f"/etc/prosody/conf.avail/{jhost}.cfg.lua"
-    file = "pcfg"
     with open(file) as inf:
         cfg = inf.read()
 
