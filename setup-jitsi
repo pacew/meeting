@@ -77,9 +77,6 @@ def fix_prosody_cfg():
         run(f"sudo cp TMP.prosody.cfg.lua {file}")
         run(f"./restart-jitsi")
 
-fix_prosody_cfg()
-sys.exit(0)
-
 def fix_apache_cfg():
     file = f"/etc/apache2/sites-available/{jhost}.conf"
     with open(file) as inf:
