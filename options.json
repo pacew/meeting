@@ -1,8 +1,8 @@
 {
-    "site_type": "php",
-    "meeting.pacew.org": {
-	"conf-production": {
-	    "external_name": "meeting.pacew.org"
-	}
+  "site_type": "php",
+  "meeting.pacew.org": {
+    "meeting-production": {
+      "external_name": "meeting.pacew.org"
     }
+  }
 }
